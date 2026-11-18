@@ -22,12 +22,17 @@ test_sobel: tests/test_sobel.cpp src/filtros.cpp src/imagen.cpp
 test_histograma: tests/test_histograma.cpp src/histograma.cpp src/imagen.cpp
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
 
-pruebas: all test_sobel test_histograma
+test_ecualizacion: tests/test_ecualizacion.cpp src/ecualizacion.cpp src/histograma.cpp src/imagen.cpp
+	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
+
+pruebas: all test_sobel test_histograma test_ecualizacion
 	bash tests/pruebas.sh
 	./test_sobel
 	./test_histograma
+	./test_ecualizacion
+
 
 clean:
-	rm -f $(BIN) test_sobel test_histograma
+	rm -f $(BIN) test_sobel test_histograma test_ecualizacion
 
 .PHONY: all pruebas clean

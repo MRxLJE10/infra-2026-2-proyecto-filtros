@@ -39,4 +39,6 @@ Histograma histograma_paralelo_compartido(
 Histograma histograma_paralelo_privado(
     const Imagen& e, int hilos);
 
+Imagen ecualizacion_secuencial(const Imagen& e);
+
 #endif
