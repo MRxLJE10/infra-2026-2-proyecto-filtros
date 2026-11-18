@@ -8,7 +8,7 @@ despachador que reparte el lote entre varios trabajadores.
 | Nombre completo | Código | Correo institucional |
 |---|---|---|
 |  |  |  |
-|  |  |  |
+| Santiago Vasquez Valencia | 202611028 | santiago.vasquez.valencia@correounivalle.edu.co |
 |  |  |  |
 
 El informe está en [`docs/`](docs/).
