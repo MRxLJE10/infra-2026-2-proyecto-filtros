@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <cmath>
+#include <omp.h>
 
 Imagen gris_secuencial(const Imagen& e) {
     if (e.canales != 3) throw std::runtime_error("gris espera una imagen de tres canales");
@@ -173,10 +174,130 @@ Imagen sobel_paralelo(const Imagen& e) {
     return s;
 }
 
-Imagen otsu_secuencial(const Imagen&) {
-    throw std::runtime_error("otsu: sin implementar");
+Imagen otsu_secuencial(const Imagen& e) {
+    if (e.canales != 1) {
+        throw std::runtime_error("otsu espera una imagen de un canal");
+    }
+
+    if (e.datos.empty()) {
+        throw std::runtime_error("otsu: imagen vacía");
+    }
+
+    // Obtener el histograma de la imagen
+    const Histograma h = histograma_secuencial(e);
+
+    const std::uint64_t total = e.datos.size();
+
+    // Calcular la suma ponderada de todos las intensidades
+    double suma_total = 0.0;
+    for (std::size_t i = 0; i < h.size(); ++i) {
+        suma_total += static_cast<double>(i) * static_cast<double>(h[i]);
+    }
+
+    std::uint64_t peso_fondo = 0;
+    double suma_fondo = 0.0;
+
+    double varianza_maxima = 0.0;
+    int umbral_optimo = 0;
+
+    for (int t = 0; t < 256; ++t) {
+        peso_fondo += h[static_cast<std::size_t>(t)];
+
+        suma_fondo += static_cast<double>(t) * static_cast<double>(h[static_cast<std::size_t>(t)]);
+
+        const std::uint64_t peso_objeto = total - peso_fondo;
+
+        // Ignorar umbrales que dejan una de las clases vacía
+        if (peso_fondo == 0 || peso_objeto == 0) {
+            continue;
+        }
+
+        const double media_fondo = suma_fondo / static_cast<double>(peso_fondo);
+        const double media_objeto = (suma_total - suma_fondo) / static_cast<double>(peso_objeto);
+
+        const double diferencia = media_fondo - media_objeto;
+        const double varianza = static_cast<double>(peso_fondo) * static_cast<double>(peso_objeto) * diferencia * diferencia;
+
+        if (varianza > varianza_maxima) {
+            varianza_maxima = varianza;
+            umbral_optimo = t;
+        }
+    }
+
+    // Contruir la imagen binaria
+    Imagen salida;
+    salida.ancho = e.ancho;
+    salida.alto = e.alto;
+    salida.canales = 1;
+    salida.datos.resize(e.datos.size());
+
+    for (std::size_t i = 0; i < e.datos.size(); ++i) {
+        salida.datos[i] = (e.datos[i] > umbral_optimo) ? 255 : 0;
+    }
+    return salida;
 }
 
-Imagen otsu_paralelo(const Imagen&) {
-    throw std::runtime_error("otsu: sin implementar");
+Imagen otsu_paralelo(const Imagen& e) {
+    if (e.canales != 1) {
+        throw std::runtime_error("otsu espera una imagen de un canal");
+    }
+
+    if (e.datos.empty()) {
+        throw std::runtime_error("otsu: imagen vacía");
+    }
+
+    // Calcular el histograma usando acumuladores privados por hilo
+    const int hilos = omp_get_max_threads();
+    const Histograma h = histograma_paralelo_privado(e, hilos);
+
+    const std::uint64_t total = e.datos.size();
+
+    // Calcular la suma ponderada de todos las intensidades
+    double suma_total = 0.0;
+    for (std::size_t i = 0; i < h.size(); ++i) {
+        suma_total += static_cast<double>(i) * static_cast<double>(h[i]);
+    }
+
+    // Buscar secuencialmente el umbral óptimo de Otsu
+    std::uint64_t peso_fondo = 0;
+    double suma_fondo = 0.0;
+    
+    double varianza_maxima = 0.0;
+    int umbral_optimo = 0;
+
+    for (int t = 0; t < 256; ++t) {
+        peso_fondo += h[static_cast<std::size_t>(t)];
+        suma_fondo += static_cast<double>(t) * static_cast<double>(h[static_cast<std::size_t>(t)]);
+
+        const std::uint64_t peso_objeto = total - peso_fondo;
+
+        if (peso_fondo == 0 || peso_objeto == 0) {
+            continue;
+        }
+
+        const double media_fondo = suma_fondo / static_cast<double>(peso_fondo);
+        const double media_objeto = (suma_total - suma_fondo) / static_cast<double>(peso_objeto);
+
+        const double diferencia = media_fondo - media_objeto;
+        const double varianza = static_cast<double>(peso_fondo) * static_cast<double>(peso_objeto) * diferencia * diferencia;
+
+        if (varianza > varianza_maxima) {
+            varianza_maxima = varianza;
+            umbral_optimo = t;
+        }
+    }
+
+    // Contruir la imagen binaria
+    Imagen salida;
+    salida.ancho = e.ancho;
+    salida.alto = e.alto;
+    salida.canales = 1;
+    salida.datos.resize(e.datos.size());
+
+    // Cada pixel es independiente de los demás, así que se puede paralelizar
+    #pragma omp parallel for schedule(static)
+    for (std::size_t i = 0; i < e.datos.size(); ++i) {
+        salida.datos[i] = (e.datos[i] > umbral_optimo) ? 255 : 0;
+    }
+    return salida;
 }

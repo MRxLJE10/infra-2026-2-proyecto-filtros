@@ -140,8 +140,10 @@ int main() {
         });
     }
 
+    
     // Prueba 6: Comparar secuencial y paralelo con diferentes hilos.
     {
+        // Escenario 1: Gradiente horizontal y vertical combinado.
         Imagen entrada = crear_imagen(5, 5, {
             0, 10, 20, 30, 40,
             5, 15, 25, 35, 45,
@@ -152,7 +154,7 @@ int main() {
 
         Imagen referencia = sobel_secuencial(entrada);
 
-        const int cantidades[] = {1, 2, 4};
+        const int cantidades[] = {1, 2, 4, 8};
 
         for (int hilos : cantidades) {
             omp_set_num_threads(hilos);
@@ -160,14 +162,41 @@ int main() {
             Imagen salida = sobel_paralelo(entrada);
 
             const std::string nombre =
-                "Secuencial vs paralelo con " +
+                "Gradiente combinado: secuencial vs paralelo con " +
                 std::to_string(hilos) + " hilo(s)";
 
             comprobar_iguales(nombre.c_str(), referencia, salida);
         }
     }
 
-    // Prueba 7: Sobel paralelo debe rechazar imagen RGB.
+    // Prueba 7: Comparar imagen constante.
+    {
+        Imagen entrada = crear_imagen(5, 5, {
+            42, 42, 42, 42, 42,
+            42, 42, 42, 42, 42,
+            42, 42, 42, 42, 42,
+            42, 42, 42, 42, 42,
+            42, 42, 42, 42, 42
+        });
+
+        Imagen referencia = sobel_secuencial(entrada);
+
+        const int cantidades[] = {1, 2, 4, 8};
+
+        for (int hilos : cantidades) {
+            omp_set_num_threads(hilos);
+
+            Imagen salida = sobel_paralelo(entrada);
+
+            const std::string nombre =
+                "Imagen constante: secuencial vs paralelo con " +
+                std::to_string(hilos) + " hilo(s)";
+
+            comprobar_iguales(nombre.c_str(), referencia, salida);
+        }
+    }
+
+    // Prueba 8: Sobel paralelo debe rechazar imagen RGB.
     {
         Imagen entrada;
         entrada.ancho = 2;

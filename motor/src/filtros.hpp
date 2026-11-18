@@ -40,5 +40,6 @@ Histograma histograma_paralelo_privado(
     const Imagen& e, int hilos);
 
 Imagen ecualizacion_secuencial(const Imagen& e);
+Imagen ecualizacion_paralela(const Imagen& e);
 
 #endif
