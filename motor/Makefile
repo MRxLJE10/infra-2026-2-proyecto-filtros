@@ -16,10 +16,14 @@ generar: bench/generar.cpp src/imagen.cpp
 arnes: bench/arnes.cpp src/filtros.cpp src/imagen.cpp
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
 
-pruebas: all
+test_sobel: tests/test_sobel.cpp src/filtros.cpp src/imagen.cpp
+	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
+
+pruebas: all test_sobel
 	bash tests/pruebas.sh
+	./test_sobel
 
 clean:
-	rm -f $(BIN)
+	rm -f $(BIN) test_sobel
 
 .PHONY: all pruebas clean
