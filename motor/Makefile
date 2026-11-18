@@ -1,6 +1,6 @@
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -fopenmp
-BIN      := motor comparar generar arnes comparar_histogramas comparar_false_sharing experimento_false_sharing
+BIN      := motor comparar generar arnes comparar_histogramas comparar_false_sharing experimento_false_sharing amdahl_otsu arnes_ecualizacion
 
 all: $(BIN)
 
@@ -19,6 +19,9 @@ arnes: bench/arnes.cpp src/filtros.cpp src/histograma.cpp src/imagen.cpp
 comparar_histogramas: bench/comparar_histogramas.cpp src/filtros.cpp src/histograma.cpp src/imagen.cpp
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
 
+arnes_ecualizacion: bench/arnes_ecualizacion.cpp src/ecualizacion.cpp src/filtros.cpp src/histograma.cpp src/imagen.cpp
+	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
+
 histograma_false_sharing: bench/histograma_false_sharing.cpp src/imagen.cpp
 	$(CXX) $(CXXFLAGS) -Isrc -c bench/histograma_false_sharing.cpp -o histograma_false_sharing.o
 
@@ -27,6 +30,9 @@ comparar_false_sharing: bench/comparar_false_sharing.cpp bench/histograma_false_
 
 experimento_false_sharing: bench/experimento_false_sharing.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
+
+amdahl_otsu: bench/amdahl_otsu.cpp src/filtros.cpp src/histograma.cpp src/ecualizacion.cpp src/imagen.cpp
+	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
 
 test_sobel: tests/test_sobel.cpp src/filtros.cpp src/histograma.cpp src/imagen.cpp
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
