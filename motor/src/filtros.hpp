@@ -19,6 +19,11 @@ Imagen caja_paralelo(const Imagen& e);
 Imagen gaussiano_secuencial(const Imagen& e);
 Imagen gaussiano_paralelo(const Imagen& e);
 
+// Gaussiano separable por bloques de filas: misma aritmética que las otras
+// versiones, pero la pasada vertical trabaja sobre un buffer pequeño por
+// bloque en lugar de sobre toda la imagen intermedia T.
+Imagen gaussiano_bloques(const Imagen& e);
+
 // Magnitud del gradiente de Sobel sobre una imagen de un canal.
 Imagen sobel_secuencial(const Imagen& e);
 Imagen sobel_paralelo(const Imagen& e);
