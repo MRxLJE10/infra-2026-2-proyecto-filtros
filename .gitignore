@@ -10,3 +10,4 @@ motor/arnes
 *.pgm
 !motor/tests/datos/*.ppm
 !motor/tests/datos/*.pgm
+motor/test_gaussiano
