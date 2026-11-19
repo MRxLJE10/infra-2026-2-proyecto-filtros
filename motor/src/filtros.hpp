@@ -2,6 +2,8 @@
 #define FILTROS_HPP
 
 #include "imagen.hpp"
+#include <array>
+#include <cstdint>
 
 // Escala de grises con la ponderación BT.601. Entra un PPM de color y sale
 // un PGM de un canal. Cada píxel de salida depende solo del píxel de entrada
@@ -32,5 +34,17 @@ Imagen sobel_paralelo(const Imagen& e);
 // histograma y binariza con él.
 Imagen otsu_secuencial(const Imagen& e);
 Imagen otsu_paralelo(const Imagen& e);
+
+using Histograma = std::array<std::uint64_t, 256>;
+
+Histograma histograma_secuencial(const Imagen& e);
+Histograma histograma_paralelo_compartido(
+    const Imagen& e, int hilos);
+
+Histograma histograma_paralelo_privado(
+    const Imagen& e, int hilos);
+
+Imagen ecualizacion_secuencial(const Imagen& e);
+Imagen ecualizacion_paralela(const Imagen& e);
 
 #endif
