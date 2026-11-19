@@ -1,6 +1,6 @@
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -fopenmp
-BIN      := motor comparar generar arnes comparar_histogramas comparar_false_sharing experimento_false_sharing amdahl_otsu arnes_ecualizacion
+BIN      := motor comparar generar arnes test_gaussiano comparar_histogramas comparar_false_sharing experimento_false_sharing amdahl_otsu arnes_ecualizacion
 
 all: $(BIN)
 
@@ -14,6 +14,9 @@ generar: bench/generar.cpp src/imagen.cpp
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
 
 arnes: bench/arnes.cpp src/filtros.cpp src/histograma.cpp src/imagen.cpp
+	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
+
+test_gaussiano: tests/test_gaussiano.cpp src/filtros.cpp src/imagen.cpp
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
 
 comparar_histogramas: bench/comparar_histogramas.cpp src/filtros.cpp src/histograma.cpp src/imagen.cpp
