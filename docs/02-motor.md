@@ -483,25 +483,25 @@ $$
 c(v)=\sum_{u=0}^{v}h(u)
 $$
 
-Posteriormente se identifica el primer valor acumulado distinto de cero, denominado \(c_{\min}\).
+Posteriormente se identifica el primer valor acumulado distinto de cero, denominado $(c_{\min}$).
 
 El valor de salida se obtiene mediante:
 
-$$
+$
 O(x,y)=
 \operatorname{round}
 \left(
 \frac{c(I(x,y))-c_{\min}}{N-c_{\min}}
 \times255
 \right)
-$$
+$
 
 Donde:
 
-- \(I(x,y)\): intensidad original.
-- \(c(I(x,y))\): frecuencia acumulada de la intensidad.
-- \(c_{\min}\): primer acumulado no nulo.
-- \(N\): cantidad total de píxeles.
+- $I(x,y)$: intensidad original.
+- $c(I(x,y))$: frecuencia acumulada de la intensidad.
+- $c_{min}$: primer acumulado no nulo.
+- $N$: cantidad total de píxeles.
 
 Cuando todos los píxeles presentan la misma intensidad, se devuelve la imagen original para evitar una división por cero.
 
@@ -755,3 +755,104 @@ Los principales archivos desarrollados o utilizados en este trabajo son:
 Las implementaciones se compilaron utilizando C++17, optimización `-O2`, advertencias `-Wall -Wextra` y soporte para OpenMP mediante `-fopenmp`.
 
 Las pruebas de correctitud se ejecutaron para los componentes desarrollados y todas las comprobaciones registradas finalizaron correctamente.
+
+## 12. Análisis estático con SonarQube Cloud
+
+### 12.1. Objetivo
+
+Se integró SonarQube Cloud al flujo de integración continua del repositorio para realizar análisis estático del código C++ del motor de procesamiento de imágenes.
+
+El objetivo es identificar posibles problemas de calidad, mantenibilidad y seguridad en el código fuente, complementando las pruebas funcionales y de rendimiento realizadas durante el desarrollo.
+
+### 12.2. Configuración
+
+La integración se realizó mediante GitHub Actions y SonarQube Cloud.
+
+Se configuraron los siguientes elementos:
+
+- **SonarQube Cloud:** plataforma utilizada para el análisis estático del código.
+- **Build Wrapper:** herramienta de SonarSource que captura los comandos de compilación necesarios para analizar correctamente el código C++.
+- **GitHub Actions:** ejecuta automáticamente la compilación, las pruebas y el análisis.
+- **Token de autenticación:** se almacena como secreto del repositorio mediante la variable `SONAR_TOKEN`.
+- **Archivo de configuración:** `sonar-project.properties`, ubicado en la raíz del repositorio.
+
+La configuración del proyecto utiliza la siguiente información:
+
+| Propiedad | Valor |
+|---|---|
+| Project key | `paralelas_infra-2026-2-proyecto-filtros` |
+| Organización | `paralelas` |
+| Lenguaje analizado | C++ |
+| Directorio de código fuente | `motor` |
+| Codificación | UTF-8 |
+
+### 12.3. Integración con GitHub Actions
+
+Se incorporó el análisis de SonarQube al workflow de integración continua existente.
+
+El proceso ejecuta las siguientes etapas:
+
+1. Descarga el repositorio.
+2. Instala las herramientas necesarias para compilar el motor.
+3. Instala Build Wrapper.
+4. Ejecuta la compilación y las pruebas mediante Build Wrapper.
+5. Genera el archivo `compile_commands.json` con la información de compilación.
+6. Ejecuta el análisis de SonarQube Cloud utilizando los comandos capturados.
+7. Publica los resultados del análisis en la plataforma.
+
+El análisis se realiza después de la compilación y las pruebas, manteniendo las validaciones existentes del proyecto.
+
+### 12.4. Resultados del análisis inicial
+
+Se ejecutó correctamente el workflow de GitHub Actions sobre la rama de trabajo `santiago`.
+
+Los registros de ejecución confirmaron los siguientes resultados:
+
+| Indicador | Resultado |
+|---|---:|
+| Unidades de compilación C++ analizadas | 19 |
+| Clases procesadas | 7 |
+| Funciones procesadas | 64 |
+| Instrucciones procesadas | 1068 |
+| Clases con errores de análisis | 0 |
+| Funciones con errores de análisis | 0 |
+| Instrucciones con errores de análisis | 0 |
+| Calidad del análisis C/C++ reportada | 100/100 |
+| Incidencias detectadas por reglas etiquetadas como `taint-analysis` | 2 |
+| Estado de ejecución | Correcto |
+
+El registro de SonarQube confirmó:
+
+`ANALYSIS SUCCESSFUL`
+
+Esto demuestra que Build Wrapper capturó correctamente la información de compilación y que SonarQube pudo analizar las unidades de código C++ del motor.
+
+### 15.5. Hallazgos y correcciones
+
+El análisis inicial identificó dos incidencias asociadas a reglas etiquetadas como `taint-analysis`.
+
+Estas incidencias deben revisarse individualmente para determinar su origen, evaluar su impacto y establecer las correcciones correspondientes.
+
+La documentación detallada de cada hallazgo se completará una vez que los resultados estén disponibles en la rama principal del proyecto.
+
+Para cada incidencia se registrarán:
+
+- Regla de SonarQube que identifica el problema.
+- Archivo y línea de código afectados.
+- Descripción del problema detectado.
+- Código o comportamiento anterior a la corrección.
+- Modificación realizada.
+- Evidencia del nuevo análisis que confirme su resolución.
+
+**Estado:** integración y análisis inicial completados. Revisión y corrección de los dos hallazgos pendientes.
+
+### 126. Evidencias
+
+La ejecución del workflow puede consultarse en:
+
+- [GitHub Actions: ejecución del análisis inicial](https://github.com/MRxLJE10/infra-2026-2-proyecto-filtros/actions/runs/44925739412/job/136911296811)
+- [SonarQube Cloud: proyecto](https://sonarcloud.io/dashboard?id=paralelas_infra-2026-2-proyecto-filtros)
+
+El análisis inicial corresponde a la rama `santiago`. La consulta de resultados de ramas distintas de la principal está limitada por el plan actual de la organización en SonarQube Cloud.
+
+Por este motivo, la revisión definitiva de los hallazgos se realizará después de incorporar los cambios a la rama principal y ejecutar nuevamente el workflow.
