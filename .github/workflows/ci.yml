@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Descargar repositorio
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
@@ -29,7 +29,7 @@ jobs:
           sudo apt-get install -y build-essential
 
       - name: Instalar Build Wrapper de SonarQube
-        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v8.5.0
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
 
       - name: Compilar y ejecutar pruebas
         run: |
@@ -44,11 +44,9 @@ jobs:
           '
 
       - name: Analizar con SonarQube Cloud
-        uses: SonarSource/sonarqube-scan-action@v8.5.0
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
             --define "sonar.cfamily.compile-commands=${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
-
-          
