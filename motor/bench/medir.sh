@@ -5,7 +5,7 @@
 #   bash bench/medir.sh imagen.ppm gris caja
 set -euo pipefail
 
-if [ $# -lt 2 ]; then
+if [[ $# -lt 2 ]]; then
     echo "uso: bash bench/medir.sh <imagen.ppm> <filtro> [filtro...]" >&2
     exit 2
 fi

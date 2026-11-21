@@ -31,7 +31,7 @@ double medir(int hilos) {
 
         for (std::uint64_t i = 0; i < ITERACIONES; ++i) {
             contadores[id].valor.fetch_add(
-                1, std::memory_order_relaxed
+                1, std::memory_order_seq_cst
             );
         }
     }

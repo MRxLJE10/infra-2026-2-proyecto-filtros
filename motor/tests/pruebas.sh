@@ -80,7 +80,7 @@ for caso in "sobel:un canal" "gris,gris:tres canales" "otsu:un canal"; do
 done
 
 echo
-if [ "$fallos" -eq 0 ]; then
+if [[ "$fallos" -eq 0 ]]; then
     echo "todas las pruebas pasaron"
 else
     echo "$fallos prueba(s) fallaron"
