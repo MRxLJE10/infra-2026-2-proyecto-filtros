@@ -16,7 +16,7 @@ generar: bench/generar.cpp src/imagen.cpp
 arnes: bench/arnes.cpp src/filtros.cpp src/histograma.cpp src/imagen.cpp
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
 
-test_gaussiano: tests/test_gaussiano.cpp src/filtros.cpp src/imagen.cpp
+test_gaussiano: tests/test_gaussiano.cpp src/filtros.cpp src/histograma.cpp src/imagen.cpp
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ $^
 
 comparar_histogramas: bench/comparar_histogramas.cpp src/filtros.cpp src/histograma.cpp src/imagen.cpp
