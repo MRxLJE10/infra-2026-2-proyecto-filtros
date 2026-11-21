@@ -1,5 +1,5 @@
 # Procesamiento de imágenes por lotes
-
+ 
 Motor de filtros en C++ con OpenMP, un trabajador que lo expone por HTTP y un
 despachador que reparte el lote entre varios trabajadores.
 
