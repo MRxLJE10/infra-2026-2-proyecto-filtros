@@ -1,7 +1,7 @@
 # 02. Motor: filtros, paralelización y mediciones
 
 ## Máquina de medición
-
+ 
 | Campo | Valor |
 |---|---|
 | Procesador | AMD Ryzen 5 3400G (4 núcleos físicos, 8 hilos lógicos, SMT) |
