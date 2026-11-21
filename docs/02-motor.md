@@ -1,6 +1,6 @@
 # 02. Motor: filtros, paralelización y mediciones
 
-## Máquina de medición
+## Entorno de medición: Gaussiano
  
 | Campo | Valor |
 |---|---|
@@ -10,7 +10,7 @@
 | Sistema | Ubuntu sobre WSL2 (hipervisor de Microsoft) |
 | Compilador | g++ 15.2.0, `-std=c++17 -O2 -Wall -Wextra -fopenmp` |
 
-Todas las mediciones de este documento salen de esta misma máquina, con el portátil conectado a la corriente y sin programas pesados abiertos.
+Las mediciones de la sección de Gaussiano se realizaron en esta máquina, con el portátil conectado a la corriente y sin programas pesados abiertos. Los resultados de las demás secciones corresponden a sus respectivos entornos de medición, indicados por separado.
 
 ## Gaussiano separable
 
@@ -103,21 +103,21 @@ Imagen de medición: 4096 × 4096 en color, generada con `generar`. Se miden cin
 
 ### Versión paralela
 
-| p | T(p) ms | S(p) = T(1)/T(p) | E(p) = S(p)/p |
+| p | T(p) ms | S(p) = T(1)/T(p) | E(p) = S(p)/p × 100 % |
 |---|---|---|---|
-| 1 | 967.12 | 1.00 | 1.00 |
-| 2 | 604.10 | 1.60 | 0.80 |
-| 4 | 474.18 | 2.04 | 0.51 |
-| 8 | 321.36 | 3.01 | 0.38 |
+| 1 | 967.12 | 1.00 | 100% |
+| 2 | 604.10 | 1.60 | 80% |
+| 4 | 474.18 | 2.04 | 51% |
+| 8 | 321.36 | 3.01 | 38% |
 
 ### Versión por bloques
 
-| p | T(p) ms | S(p) = T(1)/T(p) | E(p) = S(p)/p | Mínimo–máximo (ms) |
+| p | T(p) ms | S(p) = T(1)/T(p) | E(p) = S(p)/p × 100 % | Mínimo–máximo (ms) |
 |---|---|---|---|---|
-| 1 | 554.67 | 1.00 | 1.00 | 540.02–661.23 |
-| 2 | 317.11 | 1.75 | 0.87 | 307.87–394.32 |
-| 4 | 278.97 | 1.99 | 0.50 | 270.23–281.08 |
-| 8 | 182.87 | 3.03 | 0.38 | 179.01–188.52 |
+| 1 | 554.67 | 1.00 | 100% | 540.02–661.23 |
+| 2 | 317.11 | 1.75 | 87% | 307.87–394.32 |
+| 4 | 278.97 | 1.99 | 50% | 270.23–281.08 |
+| 8 | 182.87 | 3.03 | 38% | 179.01–188.52 |
 
 ### Comparación contra la referencia secuencial
 
@@ -128,7 +128,7 @@ Imagen de medición: 4096 × 4096 en color, generada con `generar`. Se miden cin
 | 4 | 474.18 | 278.97 | 3.63 | 1.70 |
 | 8 | 321.36 | 182.87 | 5.54 | 1.76 |
 
-La columna de la versión por bloques frente a la secuencial original mezcla dos efectos: la mejora de localidad, que ya aparece con un hilo, y el paralelismo. Por eso la superlinealidad aparente con 2 hilos (eficiencia 1.60 frente a la referencia) no es escalado real. El escalado propio de la versión por bloques es la columna S(p) de la tabla anterior.
+La comparación de la versión por bloques frente a la secuencial original mezcla dos efectos: la mejora de localidad, que ya aparece con un hilo, y el paralelismo. Por ello, esta comparación no debe interpretarse como una medida del escalado paralelo. Para evaluar el escalado propio de la versión por bloques, se utiliza su tiempo con un hilo como referencia. Con dos hilos, obtiene un speedup de 1.75 y una eficiencia aproximada del 87 %.
 
 ### Gráfica de speedup
 
@@ -152,7 +152,7 @@ Conclusión del perfilado. La versión paralela necesita unos 480 MiB por llamad
 
 ## Optimización de localidad
 
-**Elección del filtro.** El gaussiano es el filtro que peor escala: su eficiencia cae de 0.80 a 0.38 entre 2 y 8 hilos, y su intermedio `T` ocupa 384 MiB frente a una caché L3 de 4 MiB. Por eso se eligió para la optimización.
+**Elección del filtro.** El gaussiano es el filtro que peor escala: su eficiencia cae de 80% a 38% entre 2 y 8 hilos, y su intermedio `T` ocupa 384 MiB frente a una caché L3 de 4 MiB. Por eso se eligió para la optimización.
 
 **Qué cambió en el acceso a memoria.** La versión paralela recorre la imagen completa en la primera pasada, escribe `T` completo y luego lo vuelve a leer en la segunda. La versión por bloques recorre la imagen en bloques de 16 filas: calcula en un buffer privado de cada hilo las filas de `T` que necesita, y aplica la pasada vertical sobre ese buffer antes de pasar al siguiente bloque. Así `T` nunca ocupa su tamaño completo, las filas se reutilizan mientras siguen en caché y se reduce el tráfico de memoria. El costo es recalcular 4 filas de vecindad por bloque, que se paga a cambio de no tocar 384 MiB de memoria.
 
@@ -211,7 +211,7 @@ Las mediciones se realizaron bajo las siguientes condiciones:
 | Medida estadística | Mediana de las cuatro restantes |
 | Cantidad de hilos | 1, 2, 4 y 8 |
 
-Las imágenes utilizadas para las mediciones principales fueron de un canal, correspondientes al formato PGM.
+Las mediciones de esta sección se realizaron en un equipo con Debian GNU/Linux y procesador Intel Core i3-1005G1. Se utilizaron imágenes PGM de 4096 × 4096 píxeles y se evaluaron configuraciones de 1, 2, 4 y 8 hilos. Para reducir la influencia de la primera ejecución, se descartó la primera repetición y se calculó la mediana de las cuatro restantes.
 
 El tiempo de lectura y escritura de archivos se excluyó de las mediciones. El cronómetro rodeó únicamente la ejecución del algoritmo evaluado.
 
@@ -315,11 +315,7 @@ Todas las pruebas implementadas finalizaron correctamente.
 | 4 | 166.336 | 1.9435 | 48.59 % |
 | 8 | 161.244 | 2.0048 | 25.06 % |
 
-El mejor tiempo se obtuvo con ocho hilos, alcanzando 161.244 ms.
-
-Sin embargo, la mayor eficiencia se presentó con dos hilos, con un 95.48 %.
-
-El incremento de hilos después de dos produjo mejoras reducidas, lo que evidencia un escalamiento limitado por las características del procesador y los costos de coordinación.
+El incremento de hilos después de dos produjo mejoras reducidas. Entre dos y ocho hilos, el tiempo de ejecución disminuyó aproximadamente un 4.75 %, lo que evidencia un escalamiento limitado por las características del procesador y los costos de coordinación.
 
 ## 4. Implementación del histograma
 
@@ -452,10 +448,10 @@ Resultados:
 
 | Hilos | Compacto (ms) | Separado (ms) | Penalización |
 |---:|---:|---:|---:|
-| 1 | 299.8305 | 299.5225 | 1.00x |
-| 2 | 1364.77 | 296.87 | 4.60x |
-| 4 | 3165.96 | 591.99 | 5.35x |
-| 8 | 6647.90 | 1188.97 | 5.59x |
+| 1 | 304.736 | 306.608 | 0.99× |
+| 2 | 3089.93 | 306.534 | 10.08x |
+| 4 | 5303.55 | 592.488 | 8.95x |
+| 8 | 8348.20 | 1191.68 | 7.00x |
 
 La penalización se calcula como:
 
@@ -631,7 +627,7 @@ Los tiempos medidos por etapas fueron:
 | 4 | 4.7692 | 0.0016 | 5.4187 | 12.9431 |
 | 8 | 4.2151 | 0.0017 | 5.7756 | 12.9531 |
 
-El tiempo total incluye costos adicionales de preparación y ejecución, por lo que no necesariamente coincide con la suma exacta de las etapas cronometradas.
+El tiempo total se midió de forma independiente a los tiempos individuales de cada etapa. Por esta razón, no coincide necesariamente con la suma de estos últimos, ya que también contempla costos de preparación, coordinación y ejecución del algoritmo.
 
 ### 8.3. Fracción secuencial
 
@@ -666,7 +662,7 @@ Utilizando la fracción secuencial estimada:
 
 El modelo teórico muestra que, debido al pequeño tamaño de la parte secuencial, el algoritmo tendría un potencial elevado de aceleración.
 
-Sin embargo, los resultados reales dependen de otros factores, como el acceso a memoria, la creación y coordinación de hilos y las características del procesador.
+Estos valores representan un límite teórico idealizado y no consideran los costos adicionales introducidos por la paralelización. Por tanto, no deben interpretarse como una predicción exacta del rendimiento real.
 
 ### 8.5. Speedup experimental
 
@@ -681,13 +677,13 @@ Tomando como referencia el tiempo secuencial de 20.6874 ms del experimento de Am
 
 El mejor resultado experimental se obtuvo con dos hilos.
 
-La diferencia entre el modelo teórico y las mediciones reales demuestra que el rendimiento no depende exclusivamente de la fracción secuencial. Los costos de paralelización y las limitaciones del hardware también influyen.
+El speedup experimental con un hilo fue ligeramente inferior a 1 debido a la diferencia entre el tiempo de referencia secuencial y el tiempo medido en la implementación paralela. Esto refleja el costo adicional de ejecución de la versión paralela, incluso cuando se utiliza un único hilo.
 
 Las mediciones de esta sección corresponden a una ejecución experimental independiente y no deben mezclarse con las mediciones generales de Otsu presentadas en la sección 7.
 
 ## 9. Resumen de rendimiento
 
-La siguiente tabla reúne los mejores resultados observados en las mediciones principales.
+La siguiente tabla reúne los mejores resultados de tiempo de ejecución observados durante las mediciones realizadas en el equipo de pruebas.
 
 | Componente | Mejor cantidad de hilos | Tiempo mediano (ms) |
 |---|---:|---:|
@@ -710,21 +706,151 @@ Estos resultados evidencian que la configuración óptima depende de la estructu
 
 ## 10. Conclusiones
 
-La implementación paralela de los componentes permitió reducir significativamente los tiempos de ejecución en comparación con sus configuraciones de referencia.
+La implementación paralela de los componentes permitió reducir los tiempos de ejecución en diferentes escenarios, aunque las mejoras dependieron del algoritmo y de la estrategia de paralelización utilizada.
 
-Las pruebas de correctitud confirmaron que las implementaciones paralelas de Sobel, histograma, ecualización y Otsu producen los resultados esperados para los escenarios evaluados.
+Las pruebas de correctitud confirmaron que las implementaciones de Sobel, histograma, ecualización y Otsu producen los resultados esperados para los escenarios evaluados, incluyendo la comparación entre las versiones secuenciales y paralelas.
 
-La comparación entre histogramas demostró que la utilización de acumuladores privados resulta considerablemente más eficiente que el uso de un único histograma compartido con operaciones atómicas.
+La comparación entre histogramas demostró que la utilización de acumuladores privados resulta considerablemente más eficiente que el uso de un único histograma compartido con operaciones atómicas, debido a la reducción de la contención entre hilos.
 
-El experimento controlado de false sharing mostró que la distribución de variables modificadas por diferentes hilos en líneas de caché compartidas puede ocasionar penalizaciones importantes.
+El experimento controlado de false sharing mostró que la distribución de variables modificadas por diferentes hilos en líneas de caché compartidas puede ocasionar penalizaciones importantes. La separación de los contadores mediante alineación de memoria permitió reducir este efecto.
 
-El experimento de Otsu permitió comprobar que el barrido secuencial representa una fracción muy pequeña del tiempo total. Sin embargo, las mediciones reales muestran que el rendimiento también depende de los costos de paralelización y de las limitaciones físicas del equipo.
+El experimento de Otsu permitió estimar que el barrido secuencial representa una fracción muy pequeña del tiempo total de referencia. No obstante, las mediciones experimentales muestran que el rendimiento también depende de los costos de paralelización, la distribución del trabajo y las limitaciones físicas del equipo.
 
-Finalmente, se observó que incrementar la cantidad de hilos no garantiza una mejora proporcional del rendimiento. La configuración más eficiente debe determinarse experimentalmente para cada componente.
+Finalmente, se observó que incrementar la cantidad de hilos no garantiza una mejora proporcional del rendimiento. La configuración más eficiente debe determinarse experimentalmente para cada componente y teniendo en cuenta las características del hardware.
 
-## 11. Archivos relacionados
+## 11. Análisis estático con SonarQube Cloud
 
-Los principales archivos desarrollados o utilizados en este trabajo son:
+### 11.1. Objetivo
+
+Se integró SonarQube Cloud al flujo de integración continua del repositorio para analizar estáticamente el código C++ del motor de procesamiento de imágenes.
+
+El objetivo fue identificar posibles problemas de calidad, seguridad y mantenibilidad, complementar las pruebas funcionales y corregir al menos dos hallazgos detectados durante el análisis.
+
+### 11.2. Configuración
+
+La integración se realizó mediante GitHub Actions y SonarQube Cloud.
+
+Se utilizaron los siguientes elementos:
+
+- **SonarQube Cloud:** plataforma de análisis estático del código.
+- **Build Wrapper:** captura la información de compilación necesaria para el análisis del código C++.
+- **GitHub Actions:** automatiza la compilación, las pruebas y el análisis.
+- **SONAR_TOKEN:** secreto utilizado para autenticar el análisis.
+- **sonar-project.properties:** archivo de configuración del proyecto.
+
+### 11.3. Integración con GitHub Actions
+
+El workflow ejecuta las siguientes etapas:
+
+1. Descarga el repositorio.
+2. Instala las herramientas de compilación.
+3. Instala Build Wrapper.
+4. Compila el motor y ejecuta las pruebas.
+5. Genera la información de compilación requerida por el análisis.
+6. Ejecuta el análisis de SonarQube Cloud.
+7. Publica los resultados en el dashboard del proyecto.
+
+El análisis se integra al proceso de CI para verificar el código durante las actualizaciones del repositorio. Además, las acciones utilizadas en el workflow se fijaron mediante identificadores SHA completos para hacer más reproducibles y seguras sus referencias.
+
+### 11.4. Hallazgos identificados
+
+Durante la revisión del análisis estático se identificaron, entre otros, los siguientes hallazgos:
+
+| Archivo | Hallazgo |
+|---|---|
+| `.github/workflows/ci.yml` | Uso de etiquetas de versión en lugar de SHA completos para fijar las dependencias de GitHub Actions. |
+| `motor/bench/experimento_false_sharing.cpp` | Uso de un orden de memoria atómico que SonarQube recomendaba sustituir por consistencia secuencial. |
+| `motor/tests/test_gaussiano.cpp` | Advertencia relacionada con el uso del generador de números pseudoaleatorios en las pruebas. |
+
+Los dos primeros hallazgos fueron corregidos. El tercero fue revisado y se conservó por tratarse del contexto de generación de datos para pruebas.
+
+### 11.5. Correcciones realizadas: antes y después
+
+**Caso 1. Fijación de dependencias de GitHub Actions**
+
+Archivo: `.github/workflows/ci.yml`
+
+**Problema detectado:** las acciones estaban referenciadas mediante etiquetas de versión, en lugar de identificadores SHA completos.
+
+Antes:
+
+```yaml
+uses: actions/checkout@v5
+```
+
+Después:
+
+```yaml
+uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+```
+
+Se fijaron las referencias de las acciones utilizadas en el workflow a sus respectivos SHA completos, manteniendo los comentarios de versión para facilitar su identificación.
+
+Esta modificación permite que las dependencias se resuelvan a revisiones concretas de los repositorios de cada acción, evitando depender únicamente de etiquetas que pueden cambiar.
+
+**Caso 2. Consistencia secuencial en el experimento de false sharing**
+
+Archivo: `motor/bench/experimento_false_sharing.cpp`
+
+**Problema detectado:** SonarQube recomendó utilizar consistencia secuencial en la operación atómica.
+
+Antes:
+
+```cpp
+contadores[id].valor.fetch_add(
+    1, std::memory_order_relaxed
+);
+```
+
+Después:
+
+```cpp
+contadores[id].valor.fetch_add(
+    1, std::memory_order_seq_cst
+);
+```
+
+Se sustituyó `std::memory_order_relaxed` por `std::memory_order_seq_cst`, atendiendo la recomendación del análisis estático.
+
+Después de la modificación, el experimento se compiló y ejecutó correctamente. Se conservaron las comparaciones entre contadores compactos y contadores separados mediante `alignas(64)`.
+
+**Revisión de la advertencia del generador pseudoaleatorio**
+
+También se revisó la advertencia de `motor/tests/test_gaussiano.cpp`, relacionada con el generador de números pseudoaleatorios.
+
+La advertencia se evaluó en el contexto de las pruebas de correctitud, donde el generador se utiliza para producir datos de entrada de prueba. No se identificó un uso relacionado con generación de valores de seguridad o decisiones sensibles.
+
+Por tanto, se consideró una posible falsa alarma para el contexto de este proyecto y no se modificó el generador únicamente para eliminar la advertencia. Esta advertencia se mantuvo identificada como un hallazgo revisado, pero no corregido.
+
+### 11.6. Validación posterior
+
+Después de realizar las correcciones se ejecutaron nuevamente la compilación y las pruebas del motor.
+
+La compilación y las pruebas se realizaron mediante los siguientes comandos dentro de /motor:
+
+```bash
+make clean
+make all
+make pruebas
+```
+
+Las pruebas de Sobel, histogramas, ecualización y Otsu finalizaron correctamente para las configuraciones de 1, 2, 4 y 8 hilos.
+
+También se ejecutó nuevamente el experimento controlado de false sharing, comprobando que ambas variantes terminaran correctamente.
+
+Finalmente, se verificó el workflow de GitHub Actions y se consultó el dashboard de SonarQube Cloud para revisar los resultados del análisis posterior a las correcciones.
+
+En el análisis más reciente, las dos correcciones documentadas fueron incorporadas y la advertencia relacionada con el generador pseudoaleatorio de `test_gaussiano.cpp` permaneció como hallazgo revisado. Por tanto, se considera que se atendieron los dos hallazgos seleccionados para la actividad, sin afirmar que el análisis completo quedó libre de advertencias.
+
+### 11.7. Evidencias
+
+- [Repositorio del proyecto](https://github.com/MRxLJE10/infra-2026-2-proyecto-filtros)
+- [Dashboard de SonarQube Cloud](https://sonarcloud.io/project/overview?id=MRxLJE10_infra-2026-2-proyecto-filtros)
+
+Las evidencias permiten consultar el workflow de integración continua y los resultados publicados en SonarQube Cloud. Las correcciones documentadas corresponden a los hallazgos revisados en el workflow y en el experimento de false sharing. La advertencia del generador pseudoaleatorio se conserva como hallazgo revisado, no como incidencia corregida.
+
+### 12. Archivos relacionados
+Los principales archivos desarrollados y utilizados durante la implementación, validación y evaluación del motor de procesamiento de imágenes son los siguientes:
 
 ### Implementación
 
@@ -739,6 +865,7 @@ Los principales archivos desarrollados o utilizados en este trabajo son:
 - `motor/tests/test_histograma.cpp`
 - `motor/tests/test_ecualizacion.cpp`
 - `motor/tests/test_otsu.cpp`
+- `motor/tests/pruebas.sh`
 
 ### Experimentos y mediciones
 
@@ -750,109 +877,14 @@ Los principales archivos desarrollados o utilizados en este trabajo son:
 - `motor/bench/amdahl_otsu.cpp`
 - `mediciones/motor.csv`
 
+### Configuración y análisis
+
+- `.github/workflows/ci.yml`
+- `sonar-project.properties`
+- `motor/Makefile`
+
 ### Compilación
 
 Las implementaciones se compilaron utilizando C++17, optimización `-O2`, advertencias `-Wall -Wextra` y soporte para OpenMP mediante `-fopenmp`.
 
 Las pruebas de correctitud se ejecutaron para los componentes desarrollados y todas las comprobaciones registradas finalizaron correctamente.
-
-## 12. Análisis estático con SonarQube Cloud
-
-### 12.1. Objetivo
-
-Se integró SonarQube Cloud al flujo de integración continua del repositorio para realizar análisis estático del código C++ del motor de procesamiento de imágenes.
-
-El objetivo es identificar posibles problemas de calidad, mantenibilidad y seguridad en el código fuente, complementando las pruebas funcionales y de rendimiento realizadas durante el desarrollo.
-
-### 12.2. Configuración
-
-La integración se realizó mediante GitHub Actions y SonarQube Cloud.
-
-Se configuraron los siguientes elementos:
-
-- **SonarQube Cloud:** plataforma utilizada para el análisis estático del código.
-- **Build Wrapper:** herramienta de SonarSource que captura los comandos de compilación necesarios para analizar correctamente el código C++.
-- **GitHub Actions:** ejecuta automáticamente la compilación, las pruebas y el análisis.
-- **Token de autenticación:** se almacena como secreto del repositorio mediante la variable `SONAR_TOKEN`.
-- **Archivo de configuración:** `sonar-project.properties`, ubicado en la raíz del repositorio.
-
-La configuración del proyecto utiliza la siguiente información:
-
-| Propiedad | Valor |
-|---|---|
-| Project key | `paralelas_infra-2026-2-proyecto-filtros` |
-| Organización | `paralelas` |
-| Lenguaje analizado | C++ |
-| Directorio de código fuente | `motor` |
-| Codificación | UTF-8 |
-
-### 12.3. Integración con GitHub Actions
-
-Se incorporó el análisis de SonarQube al workflow de integración continua existente.
-
-El proceso ejecuta las siguientes etapas:
-
-1. Descarga el repositorio.
-2. Instala las herramientas necesarias para compilar el motor.
-3. Instala Build Wrapper.
-4. Ejecuta la compilación y las pruebas mediante Build Wrapper.
-5. Genera el archivo `compile_commands.json` con la información de compilación.
-6. Ejecuta el análisis de SonarQube Cloud utilizando los comandos capturados.
-7. Publica los resultados del análisis en la plataforma.
-
-El análisis se realiza después de la compilación y las pruebas, manteniendo las validaciones existentes del proyecto.
-
-### 12.4. Resultados del análisis inicial
-
-Se ejecutó correctamente el workflow de GitHub Actions sobre la rama de trabajo `santiago`.
-
-Los registros de ejecución confirmaron los siguientes resultados:
-
-| Indicador | Resultado |
-|---|---:|
-| Unidades de compilación C++ analizadas | 19 |
-| Clases procesadas | 7 |
-| Funciones procesadas | 64 |
-| Instrucciones procesadas | 1068 |
-| Clases con errores de análisis | 0 |
-| Funciones con errores de análisis | 0 |
-| Instrucciones con errores de análisis | 0 |
-| Calidad del análisis C/C++ reportada | 100/100 |
-| Incidencias detectadas por reglas etiquetadas como `taint-analysis` | 2 |
-| Estado de ejecución | Correcto |
-
-El registro de SonarQube confirmó:
-
-`ANALYSIS SUCCESSFUL`
-
-Esto demuestra que Build Wrapper capturó correctamente la información de compilación y que SonarQube pudo analizar las unidades de código C++ del motor.
-
-### 15.5. Hallazgos y correcciones
-
-El análisis inicial identificó dos incidencias asociadas a reglas etiquetadas como `taint-analysis`.
-
-Estas incidencias deben revisarse individualmente para determinar su origen, evaluar su impacto y establecer las correcciones correspondientes.
-
-La documentación detallada de cada hallazgo se completará una vez que los resultados estén disponibles en la rama principal del proyecto.
-
-Para cada incidencia se registrarán:
-
-- Regla de SonarQube que identifica el problema.
-- Archivo y línea de código afectados.
-- Descripción del problema detectado.
-- Código o comportamiento anterior a la corrección.
-- Modificación realizada.
-- Evidencia del nuevo análisis que confirme su resolución.
-
-**Estado:** integración y análisis inicial completados. Revisión y corrección de los dos hallazgos pendientes.
-
-### 126. Evidencias
-
-La ejecución del workflow puede consultarse en:
-
-- [GitHub Actions: ejecución del análisis inicial](https://github.com/MRxLJE10/infra-2026-2-proyecto-filtros/actions/runs/44925739412/job/136911296811)
-- [SonarQube Cloud: proyecto](https://sonarcloud.io/dashboard?id=paralelas_infra-2026-2-proyecto-filtros)
-
-El análisis inicial corresponde a la rama `santiago`. La consulta de resultados de ramas distintas de la principal está limitada por el plan actual de la organización en SonarQube Cloud.
-
-Por este motivo, la revisión definitiva de los hallazgos se realizará después de incorporar los cambios a la rama principal y ejecutar nuevamente el workflow.
